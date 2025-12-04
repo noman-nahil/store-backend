@@ -1,14 +1,28 @@
 const router = require("express").Router();
 const controller = require("../controllers/categoryController");
+const {
+  authMiddleware,
+  roleMiddleware,
+} = require("../middleware/authMiddleware");
 
 //public
 router.get("/active", controller.listActive);
-
-//admin and manager
-router.post("/", controller.create);
 router.get("/", controller.list);
 router.get("/:id", controller.getById);
-router.put("/:id", controller.update);
+
+//admin and manager
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["admin", "manager"]),
+  controller.create
+);
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["admin", "manager"]),
+  controller.update
+);
 
 // DELETE SAFETY NOTE
 // Products may still be linked to this category/subcategory.
@@ -17,6 +31,11 @@ router.put("/:id", controller.update);
 // 1) Block delete if related products exist
 // 2) Soft-delete (isDeleted = true)
 // 3) Auto-reassign products to a fallback category (optional)
-router.delete("/:id", controller.remove);
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("admin"),
+  controller.remove
+);
 
 module.exports = router;
